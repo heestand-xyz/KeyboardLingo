@@ -11,8 +11,9 @@ struct ContentView: View {
     
     @State private var word: Word = words.first!
     @State private var text: String = ""
+    @FocusState private var textFieldFocus: Bool
     
-    var jpAttributed: AttributedString {
+    private var jpAttributed: AttributedString {
         var string = AttributedString()
         for (index, character) in word.jp.enumerated() {
             let isMatch: Bool = {
@@ -21,14 +22,14 @@ struct ContentView: View {
                 return text[characterIndex] == character
             }()
             var container = AttributeContainer()
-            container[AttributeScopes.AppKitAttributes.ForegroundColorAttribute.self] = isMatch ? .textColor : .gray
+            container.foregroundColor = isMatch ? .accentColor : .gray
             let attributed = AttributedString(String(character), attributes: container)
             string.append(attributed)
         }
         return string
     }
     
-    var jpExtraAttributed: AttributedString? {
+    private var jpExtraAttributed: AttributedString? {
         guard let jpExtra = word.jpExtra else { return nil }
         var string = AttributedString()
         for (index, character) in jpExtra.enumerated() {
@@ -38,7 +39,7 @@ struct ContentView: View {
                 return text[characterIndex] == character
             }()
             var container = AttributeContainer()
-            container[AttributeScopes.AppKitAttributes.ForegroundColorAttribute.self] = isMatch ? .textColor : .gray
+            container.foregroundColor = isMatch ? .accentColor : .gray
             let attributed = AttributedString(String(character), attributes: container)
             string.append(attributed)
         }
@@ -46,31 +47,59 @@ struct ContentView: View {
     }
     
     var body: some View {
-        HStack(spacing: 100) {
-            Image(systemName: "checkmark")
-                .opacity(text == word.jp ? 1.0 : 0.0)
-            VStack(alignment: .leading) {
-                Text(word.en)
-                HStack {
-                    Text(jpAttributed)
-                    if let jpExtraAttributed {
-                        Text("(")
-                        Text(jpExtraAttributed)
-                        Text(")")
+        GeometryReader { geometry in
+            Group {
+                if geometry.size.width > geometry.size.height {
+                    HStack(spacing: geometry.size.width * 0.05) {
+                        checkmarkImage
+                        contentBody(size: geometry.size)
                     }
+                    .font(.system(size: geometry.size.width * 0.1))
+                } else {
+                    VStack(alignment: .leading, spacing: geometry.size.width * 0.1) {
+                        checkmarkImage
+                        contentBody(size: geometry.size)
+                    }
+                    .font(.system(size: geometry.size.width * 0.15))
                 }
-                    TextField("...", text: $text)
-                        .textFieldStyle(.plain)
-                        .frame(maxWidth: 1500)
-                        .onSubmit {
-                            guard text == word.jp else { return }
-                            word = words.randomElement()!
-                            text = ""
-                        }
             }
+            .padding(geometry.size.width * 0.05)
         }
-        .font(.system(size: 200))
-        .padding(200)
+    }
+    
+    private var checkmarkImage: some View {
+        Image(systemName: "checkmark")
+            .opacity(text == word.jp ? 1.0 : 0.0)
+            .foregroundStyle(.green)
+    }
+    
+    private func contentBody(size: CGSize) -> some View {
+        VStack(alignment: .leading) {
+            Text(word.en)
+            HStack {
+                Text(jpAttributed)
+                if let jpExtraAttributed {
+                    Text("(")
+                    Text(jpExtraAttributed)
+                    Text(")")
+                }
+            }
+            TextField("...", text: $text)
+#if os(iOS)
+                .submitLabel(.go)
+#endif
+                .focused($textFieldFocus)
+                .textFieldStyle(.plain)
+                .frame(maxWidth: size.width * 0.5)
+                .onSubmit {
+                    guard text == word.jp else { return }
+                    word = words.randomElement()!
+                    text = ""
+                }
+                .onAppear {
+                    textFieldFocus = true
+                }
+        }
     }
 }
 
