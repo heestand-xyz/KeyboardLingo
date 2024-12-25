@@ -12,6 +12,7 @@ enum WordSet: String, CaseIterable {
     case travel
     case food
     case cafe
+    case weather
 }
 
 extension WordSet: Identifiable {
@@ -37,6 +38,8 @@ extension WordSet {
             "Food"
         case .cafe:
             "Cafe"
+        case .weather:
+            "Weather"
         }
     }
 }
@@ -56,6 +59,8 @@ extension WordSet {
             foodWords
         case .cafe:
             cafeWords
+        case .weather:
+            weatherWords
         }
     }
 }

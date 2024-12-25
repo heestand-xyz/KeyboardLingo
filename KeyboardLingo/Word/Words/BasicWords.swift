@@ -31,7 +31,7 @@ let basicWords: [Word] = [
     Word(jp: "どうして", jpExtra: nil, en: "Why (formal)"),
     Word(jp: "どうやって", jpExtra: nil, en: "How"),
     Word(jp: "いくら", jpExtra: nil, en: "How much"),
-    Word(jp: "ひと", jpExtra: "人", en: "Person"),
+    Word(jp: "人", jpExtra: "ひと", en: "Person"),
     Word(jp: "子供", jpExtra: "こども", en: "Child"),
     Word(jp: "大人", jpExtra: "おとな", en: "Adult"),
     Word(jp: "男性", jpExtra: "だんせい", en: "Man"),

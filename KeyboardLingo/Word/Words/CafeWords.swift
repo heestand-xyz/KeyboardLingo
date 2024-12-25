@@ -59,7 +59,7 @@ let cafeWords: [Word] = [
     Word(jp: "お会計お願いします", jpExtra: "おかいけいおねがいします", en: "Check, Please"),
     Word(jp: "いらっしゃいませ", jpExtra: nil, en: "Welcome"),
     Word(jp: "ごゆっくりどうぞ", jpExtra: "ごゆっくりどうぞ", en: "Please Enjoy Your Time"),
-    Word(jp: "お飲み物はどうしますか", jpExtra: "おのみものはどうしますか", en: "What Would You Like to Drink?"),
+//    Word(jp: "お飲み物はどうしますか", jpExtra: "おのみものはどうしますか", en: "What Would You Like to Drink?"),
     Word(jp: "アレルギー", jpExtra: nil, en: "Allergy"),
     Word(jp: "ベジタリアン", jpExtra: nil, en: "Vegetarian"),
     Word(jp: "ヴィーガン", jpExtra: nil, en: "Vegan"),
