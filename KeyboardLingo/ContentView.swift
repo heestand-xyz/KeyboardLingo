@@ -8,8 +8,10 @@
 import SwiftUI
 
 struct ContentView: View {
-    
-    @State private var word: Word = words.first!
+
+    @State private var wordSet: WordSet = .default
+
+    @State private var word: Word = WordSet.default.words.first!
     @State private var text: String = ""
     @FocusState private var textFieldFocus: Bool
     
@@ -49,21 +51,34 @@ struct ContentView: View {
     var body: some View {
         GeometryReader { geometry in
             Group {
-                if geometry.size.width > geometry.size.height {
-                    HStack(spacing: geometry.size.width * 0.05) {
-                        checkmarkImage
-                        contentBody(size: geometry.size)
+                VStack {
+                    wordSetPicker
+                    Spacer()
+                    Group {
+                        if geometry.size.width > geometry.size.height {
+                            HStack(spacing: geometry.size.width * 0.05) {
+                                checkmarkImage
+                                contentBody(size: geometry.size)
+                            }
+                            .font(.system(size: geometry.size.width * 0.1))
+                        } else {
+                            VStack(alignment: .leading, spacing: geometry.size.width * 0.1) {
+                                checkmarkImage
+                                contentBody(size: geometry.size)
+                            }
+                            .font(.system(size: geometry.size.width * 0.1))
+                        }
                     }
-                    .font(.system(size: geometry.size.width * 0.1))
-                } else {
-                    VStack(alignment: .leading, spacing: geometry.size.width * 0.1) {
-                        checkmarkImage
-                        contentBody(size: geometry.size)
-                    }
-                    .font(.system(size: geometry.size.width * 0.15))
+                    .padding(geometry.size.width * 0.05)
+                    .frame(maxWidth: .infinity)
+                    Spacer()
                 }
+                .padding(32)
             }
-            .padding(geometry.size.width * 0.05)
+        }
+        .onChange(of: wordSet) { _, newWordSet in
+            word = newWordSet.words.randomElement()!
+            text = ""
         }
     }
     
@@ -73,14 +88,31 @@ struct ContentView: View {
             .foregroundStyle(.green)
     }
     
+    private var wordSetPicker: some View {
+        Picker(selection: $wordSet) {
+            ForEach(WordSet.allCases) { wordSet in
+                Text(wordSet.name)
+                    .tag(wordSet)
+            }
+        } label: {
+            EmptyView()
+        }
+        .labelsHidden()
+        .pickerStyle(.segmented)
+        .frame(maxWidth: 400)
+    }
+    
     private func contentBody(size: CGSize) -> some View {
         VStack(alignment: .leading) {
             Text(word.en)
+                .textSelection(.enabled)
             HStack {
                 Text(jpAttributed)
+                    .textSelection(.enabled)
                 if let jpExtraAttributed {
                     Text("(")
                     Text(jpExtraAttributed)
+                        .textSelection(.enabled)
                     Text(")")
                 }
             }
@@ -93,7 +125,7 @@ struct ContentView: View {
                 .frame(maxWidth: size.width * 0.5)
                 .onSubmit {
                     guard text == word.jp else { return }
-                    word = words.randomElement()!
+                    word = wordSet.words.randomElement()!
                     text = ""
                     textFieldFocus = true
                 }

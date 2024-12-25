@@ -1,17 +1,11 @@
 //
-//  Words.swift
+//  BasicWords.swift
 //  KeyboardLingo
 //
 //  Created by Anton on 2024-12-25.
 //
 
-struct Word {
-    let jp: String
-    let jpExtra: String?
-    let en: String
-}
-
-let words: [Word] = [
+let basicWords: [Word] = [
     Word(jp: "私", jpExtra: "わたし", en: "I, me"),
     Word(jp: "あなた", jpExtra: nil, en: "You"),
     Word(jp: "彼", jpExtra: "かれ", en: "He, him"),
