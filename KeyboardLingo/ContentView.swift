@@ -95,6 +95,7 @@ struct ContentView: View {
                     guard text == word.jp else { return }
                     word = words.randomElement()!
                     text = ""
+                    textFieldFocus = true
                 }
                 .onAppear {
                     textFieldFocus = true
