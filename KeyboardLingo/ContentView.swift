@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+#if canImport(CoreHaptics)
+import CoreHaptics
+#endif
 
 struct ContentView: View {
 
@@ -39,6 +42,10 @@ struct ContentView: View {
     @State private var word: Word = WordSet.default.words.first!
     @State private var text: String = ""
     @FocusState private var textFieldFocus: Bool
+    
+#if canImport(CoreHaptics)
+    @State private var hapticEngine: CHHapticEngine?
+#endif
     
     private var attributed: AttributedString {
         var string = AttributedString()
@@ -95,11 +102,49 @@ struct ContentView: View {
         return string
     }
     
+    private var jpMatchCount: Int {
+        var count: Int = 0
+        for (index, character) in word.jp.enumerated() {
+            let isMatch: Bool = {
+                guard index < text.count else { return false }
+                let characterIndex = text.index(text.startIndex, offsetBy: index)
+                return text[characterIndex] == character
+            }()
+            if isMatch {
+                count += 1
+            }
+        }
+        return count
+    }
+    
+    private var jpExtraMatchCount: Int {
+        guard let jpExtra = word.jpExtra else { return 0 }
+        var count: Int = 0
+        for (index, character) in jpExtra.enumerated() {
+            let isMatch: Bool = {
+                guard index < text.count else { return false }
+                let characterIndex = text.index(text.startIndex, offsetBy: index)
+                return text[characterIndex] == character
+            }()
+            if isMatch {
+                count += 1
+            }
+        }
+        return count
+    }
+    
+    private var matchCount: Int {
+        jpMatchCount + jpExtraMatchCount
+    }
+    
     var body: some View {
         GeometryReader { geometry in
             Group {
                 VStack {
-                    wordSetPicker
+                    ScrollView(.horizontal){
+                        wordSetPicker
+                            .padding(32)
+                    }
                     Spacer()
                         .frame(height: 64)
                     Group {
@@ -116,15 +161,20 @@ struct ContentView: View {
                         }
                     }
                     .font(.system(size: geometry.size.width * 0.075))
+                    .padding(32)
                     .frame(maxWidth: .infinity)
                     Spacer()
                 }
-                .padding(32)
             }
         }
         .onChange(of: wordSet) { _, newWordSet in
             word = newWordSet.words.randomElement()!
             text = ""
+        }
+        .onChange(of: matchCount) { oldCount, newCount in
+            if newCount > oldCount {
+                haptic(count: 1)
+            }
         }
     }
     
@@ -194,16 +244,84 @@ struct ContentView: View {
             .focused($textFieldFocus)
             .textFieldStyle(.plain)
             .frame(maxWidth: size.width * 0.5)
+            .onChange(of: text) { oldText, newText in
+                if oldText != word.jp, newText == word.jp {
+                    haptic(count: 10, magic: true)
+                }
+            }
             .onSubmit {
                 guard text == word.jp else { return }
                 word = wordSet.words.randomElement()!
                 text = ""
                 textFieldFocus = true
                 incrementCount(for: wordSet)
+                haptic(count: 2, soft: true)
             }
             .onAppear {
                 textFieldFocus = true
             }
+    }
+    
+    private func haptic(count: Int, soft: Bool = false, magic: Bool = false) {
+#if os(macOS)
+        let manager = NSHapticFeedbackManager.defaultPerformer
+        manager.perform(.generic, performanceTime: .now)
+#elseif canImport(CoreHaptics)
+        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
+        if magic {
+            do {
+                let duration: TimeInterval = 1.0
+                let count: Int = 10
+                
+                let engine = try CHHapticEngine()
+                try engine.start()
+                var events = [CHHapticEvent]()
+                
+                for index in 0..<count {
+                    let fraction = TimeInterval(index) / TimeInterval(count)
+                    let time: TimeInterval = fraction * duration
+                    let continuousVibration = CHHapticEvent(
+                        eventType: .hapticContinuous,
+                        parameters: [
+                            CHHapticEventParameter(parameterID: .hapticIntensity, value: Float(fraction)),
+                            CHHapticEventParameter(parameterID: .hapticSharpness, value: Float(fraction))
+                        ],
+                        relativeTime: time,
+                        duration: duration / TimeInterval(count)
+                    )
+                    events.append(continuousVibration)
+                }
+                
+                let pattern = try CHHapticPattern(events: events, parameters: [])
+                
+                let player = try engine.makePlayer(with: pattern)
+                try player.start(atTime: 0)
+                
+                hapticEngine = engine
+                
+                Timer.scheduledTimer(withTimeInterval: duration, repeats: false) { _ in
+                    engine.stop()
+                    hapticEngine = nil
+                }
+            } catch {
+                print("Haptic failure: \(error)")
+            }
+        } else {
+            let generator = UIImpactFeedbackGenerator(style: soft ? .soft : .light)
+            generator.prepare()
+            generator.impactOccurred()
+            if count > 1 {
+                var index = 0
+                Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { timer in
+                    generator.impactOccurred()
+                    index += 1
+                    if index == count - 1 {
+                        timer.invalidate()
+                    }
+                }
+            }
+        }
+#endif
     }
 }
 
